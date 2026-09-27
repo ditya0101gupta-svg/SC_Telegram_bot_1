@@ -4,4 +4,4 @@ langchain>=1.0
 langgraph
 langchain-groq
 langchain-google-genai
-langgraph checkpoint
+langgraph-checkpoint
