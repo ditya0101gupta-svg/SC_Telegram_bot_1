@@ -1,9 +1,11 @@
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
 from llm import groq_llm
 from tool import live_cricket_score
 
 checkpointer = InMemorySaver()
+store = InMemoryStore()
 
 agent = create_agent(
     model=groq_llm,
@@ -18,5 +20,6 @@ After receiving the tool result, answer the user's question normally.
 
     tools=[live_cricket_score],
 
-    checkpointer=checkpointer
+    checkpointer=checkpointer,
+    store=store
 )
