@@ -35,7 +35,7 @@ async def reply(update, context):
     print("MESSAGE RECEIVED:", update.message.text)
 
     from agent import agent
-    
+
     result = await agent.ainvoke(
         {
             "messages": [
@@ -58,7 +58,7 @@ async def reply(update, context):
         result["messages"][-1].content
     )
 
-    threading.Thread(
+threading.Thread(
     target=run_health_server,
     daemon=True
 ).start()
