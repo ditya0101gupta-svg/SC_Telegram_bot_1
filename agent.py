@@ -4,7 +4,7 @@ from psycopg.rows import dict_row
 
 from langchain.agents import create_agent
 from langgraph.checkpoint.postgres import PostgresSaver
-from langgraph.store.memory import InMemoryStore
+from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from llm import groq_llm
@@ -21,7 +21,9 @@ conn = psycopg.connect(
 checkpointer = PostgresSaver(conn)
 checkpointer.setup()
 
-store = InMemoryStore()
+store = PostgresStore(conn)
+store.setup()
+
 
 @tool
 def save_memory(key: str, value: str, config: RunnableConfig) -> str:
