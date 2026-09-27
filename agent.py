@@ -2,6 +2,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig
 from llm import groq_llm
 from tool import live_cricket_score
 
@@ -9,21 +10,23 @@ checkpointer = InMemorySaver()
 store = InMemoryStore()
 
 @tool
-def save_memory(key: str, value: str) -> str:
+def save_memory(key: str, value: str, config: RunnableConfig) -> str:
     """Save an important fact about the user to long-term memory."""
-    store.put(("user",), key, {"value": value})
+    user_id = config["configurable"]["thread_id"]
+    store.put(("user", user_id), key, {"value": value})
     return f"Saved {key} to memory."
 
-
 @tool
-def get_memory(key: str) -> str:
+def get_memory(key: str, config: RunnableConfig) -> str:
     """Retrieve a fact about the user from long-term memory."""
-    result = store.get(("user",), key)
+    user_id = config["configurable"]["thread_id"]
+    result = store.get(("user", user_id), key)
 
     if result is None:
         return f"No memory found for {key}."
 
     return result.value["value"]
+
 
 agent = create_agent(
     model=groq_llm,
