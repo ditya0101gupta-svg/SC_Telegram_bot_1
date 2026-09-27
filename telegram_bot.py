@@ -4,7 +4,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from dotenv import load_dotenv
 from telegram.ext import Application, MessageHandler, filters
-from langgraph.checkpoint.memory import InMemorySaver
 
 from agent import agent
 
@@ -36,24 +35,15 @@ def run_health_server():
 
 async def reply(update, context):
     result = await agent.ainvoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": update.message.text
-                }
-            ]
-        },
-        config={
-            "configurable": {
-                "thread_id": str(update.effective_chat.id)
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": update.message.text
             }
-        }
-    )
-
-    await update.message.reply_text(
-        result["messages"][-1].content
-    )
+        ]
+    }
+)
 
 
 # Start Render health server

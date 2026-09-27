@@ -1,5 +1,4 @@
 from langchain.agents import create_agent
-from langgraph.checkpointer.memory import InMemorySaver
 from llm import groq_llm
 from tool import live_cricket_score
 
@@ -12,6 +11,5 @@ using country1="India" and country2="Pakistan".
 
 After receiving the tool result, answer the user's question normally.
 """,
-    tools=[live_cricket_score],
-    checkpointer=InMemorySaver()
+    tools=[live_cricket_score]
 )
