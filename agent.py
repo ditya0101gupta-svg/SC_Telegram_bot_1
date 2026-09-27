@@ -1,12 +1,26 @@
+import os
+import psycopg
+from psycopg.rows import dict_row
+
 from langchain.agents import create_agent
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.memory import InMemoryStore
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from llm import groq_llm
 from tool import live_cricket_score
 
-checkpointer = InMemorySaver()
+DB_URI = os.getenv("DATABASE_URL")
+
+conn = psycopg.connect(
+    DB_URI,
+    autocommit=True,
+    row_factory=dict_row
+)
+
+checkpointer = PostgresSaver(conn)
+checkpointer.setup()
+
 store = InMemoryStore()
 
 @tool

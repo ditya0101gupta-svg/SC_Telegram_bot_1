@@ -5,3 +5,5 @@ langgraph
 langchain-groq
 langchain-google-genai
 langgraph-checkpoint
+langgraph-checkpoint-postgres
+psycopg[binary]
