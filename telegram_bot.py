@@ -77,7 +77,7 @@ async def reply(update, context):
 
     from agent import agent
 
-    result = await agent.ainvoke(
+    result = agent.invoke(
         {
             "messages": [
                 {
