@@ -62,8 +62,14 @@ async def about(update, context):
 
 
 async def clear(update, context):
+    from agent import checkpointer
+
+    thread_id = str(update.effective_chat.id)
+
+    checkpointer.delete_thread(thread_id)
+
     await update.message.reply_text(
-        "🧹 Conversation clear will be added with the memory system."
+        "🧹 Conversation cleared successfully!"
     )
 
 async def reply(update, context):
