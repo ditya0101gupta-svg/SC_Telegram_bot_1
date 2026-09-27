@@ -5,8 +5,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from dotenv import load_dotenv
 from telegram.ext import Application, MessageHandler, filters
 
-from agent import agent
-
 load_dotenv()
 
 
@@ -36,6 +34,8 @@ def run_health_server():
 async def reply(update, context):
     print("MESSAGE RECEIVED:", update.message.text)
 
+    from agent import agent
+    
     result = await agent.ainvoke(
         {
             "messages": [
