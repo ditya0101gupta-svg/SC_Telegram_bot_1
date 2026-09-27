@@ -3,7 +3,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from dotenv import load_dotenv
-from telegram.ext import Application, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 load_dotenv()
 
@@ -30,6 +30,41 @@ def run_health_server():
     print(f"Health server running on 0.0.0.0:{port}")
     server.serve_forever()
 
+async def start(update, context):
+    await update.message.reply_text(
+        "👋 Welcome to Nexora AI!\n\n"
+        "I can chat with you, answer questions, and use tools.\n\n"
+        "Commands:\n"
+        "/help - See what I can do\n"
+        "/about - About this bot\n"
+        "/clear - Clear conversation"
+    )
+
+
+async def help_command(update, context):
+    await update.message.reply_text(
+        "🤖 Nexora AI Help\n\n"
+        "You can ask me questions and I can use my tools when needed.\n\n"
+        "Commands:\n"
+        "/start - Start the bot\n"
+        "/help - Show help\n"
+        "/about - About Nexora AI\n"
+        "/clear - Clear conversation"
+    )
+
+
+async def about(update, context):
+    await update.message.reply_text(
+        "🚀 Nexora AI\n\n"
+        "An AI Telegram assistant built with Python, "
+        "LangChain/LangGraph and Groq."
+    )
+
+
+async def clear(update, context):
+    await update.message.reply_text(
+        "🧹 Conversation clear will be added with the memory system."
+    )
 
 async def reply(update, context):
     print("MESSAGE RECEIVED:", update.message.text)
@@ -67,6 +102,11 @@ threading.Thread(
 app = Application.builder().token(
     os.getenv("TELEGRAM_TOKEN")
 ).build()
+
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("help", help_command))
+app.add_handler(CommandHandler("about", about))
+app.add_handler(CommandHandler("clear", clear))
 
 app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, reply)
