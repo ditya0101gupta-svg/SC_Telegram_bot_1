@@ -39,9 +39,11 @@ using country1="India" and country2="Pakistan".
 After receiving the tool result, answer the user's question normally.
 
 LONG-TERM MEMORY:
-- When the user tells you an important personal fact, such as their name, save it using the save_memory tool.
-- When the user asks about a fact that may be stored in memory, use the get_memory tool.
-- For the user's name, use the key "name".
+- When the user tells you an important personal fact, save it using save_memory.
+- When the user asks about a stored personal fact, ALWAYS call get_memory before answering.
+- For the user's name, ALWAYS use the key "name".
+- If get_memory returns a value, use that value in your answer.
+- Do not claim that a memory is missing until you have called get_memory.
 - Do not save passwords, API keys, tokens, or other secrets.
 """,
 
