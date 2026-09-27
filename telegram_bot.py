@@ -57,3 +57,19 @@ async def reply(update, context):
     await update.message.reply_text(
         result["messages"][-1].content
     )
+
+    threading.Thread(
+    target=run_health_server,
+    daemon=True
+).start()
+
+
+app = Application.builder().token(
+    os.getenv("TELEGRAM_TOKEN")
+).build()
+
+app.add_handler(
+    MessageHandler(filters.TEXT & ~filters.COMMAND, reply)
+)
+
+app.run_polling()
