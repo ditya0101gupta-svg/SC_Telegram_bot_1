@@ -1,6 +1,7 @@
 import os
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from langchain.agents import create_agent
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -21,13 +22,18 @@ conn = psycopg.connect(
 checkpointer = PostgresSaver(conn)
 checkpointer.setup()
 
-store_conn = psycopg.connect(
+store_pool = ConnectionPool(
     DB_URI,
-    autocommit=True,
-    row_factory=dict_row
+    min_size=1,
+    max_size=5,
+    kwargs={
+        "autocommit": True,
+        "prepare_threshold": 0,
+        "row_factory": dict_row,
+    },
 )
 
-store = PostgresStore(conn)
+store = PostgresStore(store_pool)
 store.setup()
 
 
