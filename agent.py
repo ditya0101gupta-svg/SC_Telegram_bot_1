@@ -21,6 +21,12 @@ conn = psycopg.connect(
 checkpointer = PostgresSaver(conn)
 checkpointer.setup()
 
+store_conn = psycopg.connect(
+    DB_URI,
+    autocommit=True,
+    row_factory=dict_row
+)
+
 store = PostgresStore(conn)
 store.setup()
 
