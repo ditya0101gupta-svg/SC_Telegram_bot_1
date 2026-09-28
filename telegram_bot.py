@@ -1,5 +1,6 @@
 import os
 import threading
+import asyncio
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from dotenv import load_dotenv
@@ -77,21 +78,11 @@ async def reply(update, context):
 
     from agent import agent
 
-    result = agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": update.message.text
-                }
-            ]
-        },
-        config={
-            "configurable": {
-                "thread_id": str(update.effective_chat.id)
-            }
-        }
-    )
+    result = await asyncio.to_thread(
+    agent.invoke,
+    {"messages": [{"role": "user", "content": update.message.text}]},
+    config={"configurable": {"thread_id": str(update.effective_chat.id)}}
+)
 
     response_text = ""
 
