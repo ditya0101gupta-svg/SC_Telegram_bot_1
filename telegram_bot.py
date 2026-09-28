@@ -82,7 +82,6 @@ async def clear(update, context):
     )
 
 async def reply(update, context):
-    logger.info("Health server started on port %s", port)
     
     from agent import agent
 
