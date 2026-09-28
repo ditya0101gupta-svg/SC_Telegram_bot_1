@@ -55,6 +55,17 @@ def get_memory(key: str, config: RunnableConfig) -> str:
 
     return result.value["value"]
 
+@tool
+def get_name(config: RunnableConfig) -> str:
+    """Retrieve the user's stored name. Use this when the user asks for their name."""
+    user_id = config["configurable"]["thread_id"]
+
+    result = store.get(("user", user_id), "name")
+
+    if result is None:
+        return "No name found."
+
+    return result.value["value"]
 
 agent = create_agent(
     model=groq_llm,
@@ -78,15 +89,17 @@ LONG-TERM MEMORY:
   - favorite_team
   - favorite_food
 - For any other personal fact, create a short descriptive key.
-- When the user asks about a stored personal fact, ALWAYS call get_memory before answering.
-- For the user's name, ALWAYS use the key "name".
+- When the user asks about a stored personal fact, ALWAYS retrieve the memory before answering.
+- If the user asks for their name, ALWAYS call get_name.
+- NEVER use get_memory to retrieve the user's name.
+- For other stored personal facts, use get_memory with the correct key.
 - If get_memory returns a value, use that value in your answer.
 - Do not claim that a memory is missing until you have called get_memory.
 - Do not save passwords, API keys, tokens, or other secrets.
 """,
 
     tools=[live_cricket_score, save_memory,
-     get_memory],
+     get_memory, get_name],
 
     checkpointer=checkpointer,
     store=store
