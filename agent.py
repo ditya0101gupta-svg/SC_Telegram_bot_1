@@ -68,11 +68,13 @@ After receiving the tool result, answer the user's question normally.
 
 LONG-TERM MEMORY:
 - When the user tells you an important personal fact, save it using save_memory.
-- When the user asks about a stored personal fact, ALWAYS call get_memory before answering.
+- Use a short, clear key that describes the fact.
 - For the user's name, ALWAYS use the key "name".
+- When the user asks about a stored personal fact, ALWAYS call get_memory before answering.
 - If get_memory returns a value, use that value in your answer.
 - Do not claim that a memory is missing until you have called get_memory.
 - Do not save passwords, API keys, tokens, or other secrets.
+- If the user provides multiple important facts, save each fact separately with its own key.
 """,
 
     tools=[live_cricket_score, save_memory,
