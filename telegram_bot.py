@@ -1,4 +1,5 @@
 import os
+import logging
 import threading
 import asyncio
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -7,6 +8,13 @@ from dotenv import load_dotenv
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 
 # Simple health server for Render
@@ -28,7 +36,7 @@ def run_health_server():
         HealthHandler
     )
 
-    print(f"Health server running on 0.0.0.0:{port}")
+    logger.info("Health server started on port %s", port)
     server.serve_forever()
 
 async def start(update, context):
@@ -74,8 +82,8 @@ async def clear(update, context):
     )
 
 async def reply(update, context):
-    print("MESSAGE RECEIVED")
-
+    logger.info("Health server started on port %s", port)
+    
     from agent import agent
 
     result = await asyncio.to_thread(
@@ -115,7 +123,6 @@ async def reply(update, context):
     if not response_text:
         response_text = "Sorry, I couldn't generate a response. Please try again."
 
-    print("AGENT RESPONSE:", response_text)
 
     await update.message.reply_text(response_text)
 

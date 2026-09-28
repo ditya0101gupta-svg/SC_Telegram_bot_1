@@ -1,7 +1,10 @@
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 import psycopg
 from psycopg.rows import dict_row
@@ -124,11 +127,9 @@ class StopAgentMiddleware(AgentMiddleware):
     def before_model(self, state, runtime):
         last_message = state["messages"][-1]
 
-        print("Middleware saw:", last_message.content)
 
         if "STOP_AGENT" in str(last_message.content):
-            print("Middleware: stopping agent")
-            return {"jump_to": "end"}
+            logger.info("Agent stopped by middleware")
 
         return None
 
