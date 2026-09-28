@@ -2,7 +2,7 @@ import os
 import threading
 import asyncio
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
+from langgraph.types import Command
 from dotenv import load_dotenv
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
@@ -79,10 +79,18 @@ async def reply(update, context):
     from agent import agent
 
     result = await asyncio.to_thread(
-    agent.invoke,
-    {"messages": [{"role": "user", "content": update.message.text}]},
-    config={"configurable": {"thread_id": str(update.effective_chat.id)}}
-)
+        agent.invoke,
+        {"messages": [{"role": "user", "content": update.message.text}]},
+        config={"configurable": {"thread_id": str(update.effective_chat.id)}}
+    )
+
+    if "__interrupt__" in result:
+        await update.message.reply_text(
+            "⚠️ Human approval required.\n\n"
+            "Reply APPROVE to continue or REJECT to cancel."
+        )
+        context.user_data["hitl_pending"] = True
+        return
 
     response_text = ""
 
@@ -103,6 +111,59 @@ async def reply(update, context):
 
     await update.message.reply_text(response_text)
 
+async def handle_approval(update, context):
+    decision = update.message.text.strip().lower()
+
+    if not context.user_data.get("hitl_pending"):
+        return
+
+    if decision not in {"approve", "reject"}:
+        await update.message.reply_text(
+            "Please reply with APPROVE or REJECT."
+        )
+        return
+
+    from agent import agent
+
+    thread_id = str(update.effective_chat.id)
+
+    if decision == "approve":
+        resume_command = Command(
+            resume={"decisions": [{"type": "approve"}]}
+        )
+    else:
+        resume_command = Command(
+            resume={
+                "decisions": [{
+                    "type": "reject",
+                    "message": "User rejected this action."
+                }]
+            }
+        )
+
+    result = await asyncio.to_thread(
+        agent.invoke,
+        resume_command,
+        config={"configurable": {"thread_id": thread_id}}
+    )
+
+    context.user_data["hitl_pending"] = False
+
+    response_text = ""
+
+    for message in reversed(result["messages"]):
+        if getattr(message, "type", "") == "ai":
+            content = getattr(message, "content", "")
+
+            if isinstance(content, str) and content.strip():
+                response_text = content.strip()
+                break
+
+    if not response_text:
+        response_text = "The action was processed."
+
+    await update.message.reply_text(response_text)
+
 threading.Thread(
     target=run_health_server,
     daemon=True
@@ -119,7 +180,12 @@ app.add_handler(CommandHandler("about", about))
 app.add_handler(CommandHandler("clear", clear))
 
 app.add_handler(
-    MessageHandler(filters.TEXT & ~filters.COMMAND, reply)
+    MessageHandler(
+        filters.Regex(r"(?i)^(approve|reject)$"),
+        handle_approval
+    )
 )
+
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply))
 
 app.run_polling()

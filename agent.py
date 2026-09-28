@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
@@ -8,7 +12,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
-from langchain.agents.middleware import PIIMiddleware
+from langchain.agents.middleware import (PIIMiddleware, HumanInTheLoopMiddleware)
 from llm import groq_llm
 from tool import live_cricket_score
 
@@ -93,17 +97,30 @@ def get_favorite_cricketer(config: RunnableConfig) -> str:
 
     return result.value["value"]
 
+@tool
+def test_approval(message: str) -> str:
+    """Test tool that requires human approval before execution."""
+    return f"Approved action executed: {message}"
+
 agent = create_agent(
     model=groq_llm,
 
     middleware=[
-        PIIMiddleware(
-            "email",
-            strategy="redact",
-            apply_to_input=True,
-        ),
-    ],
+    PIIMiddleware(
+        "email",
+        strategy="redact",
+        apply_to_input=True,
+    ),
 
+    HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_approval": {
+                "allowed_decisions": ["approve", "reject"]
+            }
+        }
+    ),
+],
+    
     system_prompt="""You are a helpful assistant.
 
 Use the live_cricket_score tool only when the user asks about a cricket score.
@@ -133,7 +150,7 @@ LONG-TERM MEMORY:
 """,
 
     tools=[live_cricket_score, save_memory,
-     get_memory, get_name, get_city, get_favorite_cricketer],
+     get_memory, get_name, get_city, get_favorite_cricketer, test_approval],
 
     checkpointer=checkpointer,
     store=store
