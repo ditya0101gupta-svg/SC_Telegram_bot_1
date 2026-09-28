@@ -8,6 +8,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
+from langchain.agents.middleware import PIIMiddleware
 from llm import groq_llm
 from tool import live_cricket_score
 
@@ -94,6 +95,14 @@ def get_favorite_cricketer(config: RunnableConfig) -> str:
 
 agent = create_agent(
     model=groq_llm,
+
+    middleware=[
+        PIIMiddleware(
+            "email",
+            strategy="redact",
+            apply_to_input=True,
+        ),
+    ],
 
     system_prompt="""You are a helpful assistant.
 
