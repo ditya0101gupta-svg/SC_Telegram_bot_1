@@ -97,10 +97,9 @@ agent = create_agent(
 
     system_prompt="""You are a helpful assistant.
 
-For every user question, first call the live_cricket_score tool
-using country1="India" and country2="Pakistan".
-
-After receiving the tool result, answer the user's question normally.
+Use the live_cricket_score tool only when the user asks about a cricket score.
+For memory questions, use the appropriate memory tool directly.
+After using a tool, answer the user's question normally.
 
 LONG-TERM MEMORY:
 - When the user explicitly tells you a personal fact, ALWAYS save it immediately using save_memory.
