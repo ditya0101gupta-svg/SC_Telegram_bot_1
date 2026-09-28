@@ -74,7 +74,7 @@ async def clear(update, context):
     )
 
 async def reply(update, context):
-    print("MESSAGE RECEIVED:", update.message.text)
+    print("MESSAGE RECEIVED")
 
     from agent import agent
 
