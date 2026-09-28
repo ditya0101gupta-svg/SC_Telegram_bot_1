@@ -12,7 +12,12 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
-from langchain.agents.middleware import (PIIMiddleware, HumanInTheLoopMiddleware)
+from langchain.agents.middleware import (
+    PIIMiddleware,
+    HumanInTheLoopMiddleware,
+    AgentMiddleware,
+    hook_config,
+)
 from llm import groq_llm
 from tool import live_cricket_score
 
@@ -102,6 +107,25 @@ def test_approval(message: str) -> str:
     """Test tool that requires human approval before execution."""
     return f"Approved action executed: {message}"
 
+@tool
+def stop_test() -> str:
+    """Test tool for middleware that should stop the agent before execution."""
+    return "This tool should never execute."
+    
+class StopAgentMiddleware(AgentMiddleware):
+
+    @hook_config(can_jump_to=["end"])
+    def before_model(self, state, runtime):
+        last_message = state["messages"][-1]
+
+        print("Middleware saw:", last_message.content)
+
+        if "STOP_AGENT" in str(last_message.content):
+            print("Middleware: stopping agent")
+            return {"jump_to": "end"}
+
+        return None
+
 agent = create_agent(
     model=groq_llm,
 
@@ -119,8 +143,10 @@ agent = create_agent(
             }
         }
     ),
+
+    StopAgentMiddleware(),
 ],
-    
+
     system_prompt="""You are a helpful assistant.
 
 Use the live_cricket_score tool only when the user asks about a cricket score.
@@ -150,7 +176,7 @@ LONG-TERM MEMORY:
 """,
 
     tools=[live_cricket_score, save_memory,
-     get_memory, get_name, get_city, get_favorite_cricketer, test_approval],
+     get_memory, get_name, get_city, get_favorite_cricketer, test_approval, stop_test],
 
     checkpointer=checkpointer,
     store=store

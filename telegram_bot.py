@@ -92,6 +92,14 @@ async def reply(update, context):
         context.user_data["hitl_pending"] = True
         return
 
+    last_message = result["messages"][-1]
+
+    if getattr(last_message, "content", "") == "STOP_AGENT":
+        await update.message.reply_text(
+            "🛑 Agent stopped by middleware."
+        )
+        return
+
     response_text = ""
 
     # Find the latest AI message that actually contains text
