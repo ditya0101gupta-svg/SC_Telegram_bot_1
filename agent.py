@@ -10,7 +10,8 @@ from psycopg_pool import ConnectionPool
 from langchain.agents import create_agent
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
-from langchain_core.tools import tool
+from langchain_core.tools import tool,ToolException
+from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain.agents.middleware import (
     PIIMiddleware,
@@ -111,6 +112,11 @@ def test_approval(message: str) -> str:
 def stop_test() -> str:
     """Test tool for middleware that should stop the agent before execution."""
     return "This tool should never execute."
+
+@tool
+def rate_limit_test() -> str:
+    """Simulate an API rate limit error."""
+    raise ToolException("API rate limit exceeded.")
     
 class StopAgentMiddleware(AgentMiddleware):
 
@@ -125,6 +131,28 @@ class StopAgentMiddleware(AgentMiddleware):
             return {"jump_to": "end"}
 
         return None
+
+def handle_tool_error(exc: Exception, request) -> str | None:
+    if isinstance(exc, RuntimeError) and "rate limit" in str(exc).lower():
+        return "⏳ The service is temporarily rate-limited. Please try again later."
+
+    return None
+
+class RateLimitMiddleware(AgentMiddleware):
+
+    def wrap_tool_call(self, request, handler):
+        try:
+            return handler(request)
+
+        except ToolException as exc:
+            if "rate limit" in str(exc).lower():
+                return ToolMessage(
+                    content="The service is temporarily rate-limited. Please try again later.",
+                    tool_call_id=request.tool_call["id"],
+                    status="error",
+                )
+
+            raise
 
 agent = create_agent(
     model=groq_llm,
@@ -145,6 +173,8 @@ agent = create_agent(
     ),
 
     StopAgentMiddleware(),
+    RateLimitMiddleware(),
+
 ],
 
     system_prompt="""You are a helpful assistant.
@@ -176,7 +206,7 @@ LONG-TERM MEMORY:
 """,
 
     tools=[live_cricket_score, save_memory,
-     get_memory, get_name, get_city, get_favorite_cricketer, test_approval, stop_test],
+     get_memory, get_name, get_city, get_favorite_cricketer, test_approval, stop_test, rate_limit_test],
 
     checkpointer=checkpointer,
     store=store
