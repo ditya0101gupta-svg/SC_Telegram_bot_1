@@ -67,6 +67,31 @@ def get_name(config: RunnableConfig) -> str:
 
     return result.value["value"]
 
+@tool
+def get_city(config: RunnableConfig) -> str:
+    """Retrieve the user's stored city. Use this when the user asks where they live."""
+    user_id = config["configurable"]["thread_id"]
+
+    result = store.get(("user", user_id), "city")
+
+    if result is None:
+        return "No city found."
+
+    return result.value["value"]
+
+
+@tool
+def get_favorite_cricketer(config: RunnableConfig) -> str:
+    """Retrieve the user's stored favorite cricketer."""
+    user_id = config["configurable"]["thread_id"]
+
+    result = store.get(("user", user_id), "favorite_cricketer")
+
+    if result is None:
+        return "No favorite cricketer found."
+
+    return result.value["value"]
+
 agent = create_agent(
     model=groq_llm,
 
@@ -90,16 +115,17 @@ LONG-TERM MEMORY:
   - favorite_food
 - For any other personal fact, create a short descriptive key.
 - When the user asks about a stored personal fact, ALWAYS retrieve the memory before answering.
-- If the user asks for their name, ALWAYS call get_name.
+- When the user asks for their name, ALWAYS call get_name.
 - NEVER use get_memory to retrieve the user's name.
+- When the user asks where they live, ALWAYS call get_city.
+- NEVER use get_memory to retrieve the user's city.
+- When the user asks for their favorite cricketer, ALWAYS call get_favorite_cricketer.
+- NEVER use get_memory to retrieve the user's favorite cricketer.
 - For other stored personal facts, use get_memory with the correct key.
-- If get_memory returns a value, use that value in your answer.
-- Do not claim that a memory is missing until you have called get_memory.
-- Do not save passwords, API keys, tokens, or other secrets.
 """,
 
     tools=[live_cricket_score, save_memory,
-     get_memory, get_name],
+     get_memory, get_name, get_city, get_favorite_cricketer],
 
     checkpointer=checkpointer,
     store=store
