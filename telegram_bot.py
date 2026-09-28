@@ -93,11 +93,24 @@ async def reply(update, context):
         }
     )
 
-    print("AGENT RESPONSE:", result["messages"][-1].content)
+    response_text = ""
 
-    await update.message.reply_text(
-        result["messages"][-1].content
-    )
+    # Find the latest AI message that actually contains text
+    for message in reversed(result["messages"]):
+        if getattr(message, "type", "") == "ai":
+            content = getattr(message, "content", "")
+
+            if isinstance(content, str) and content.strip():
+                response_text = content.strip()
+                break
+
+    # Prevent Telegram's "Message text is empty" error
+    if not response_text:
+        response_text = "Sorry, I couldn't generate a response. Please try again."
+
+    print("AGENT RESPONSE:", response_text)
+
+    await update.message.reply_text(response_text)
 
 threading.Thread(
     target=run_health_server,
