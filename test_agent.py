@@ -40,13 +40,7 @@ def test_rate_limit_middleware():
         }
     )
 
-    for message in result["messages"]:
-      print(
-        "TYPE:", getattr(message, "type", None),
-        "STATUS:", getattr(message, "status", None),
-        "CONTENT:", getattr(message, "content", None)
-    )
-
+    
     assert result["messages"]
 
 def test_pii_redaction():
