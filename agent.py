@@ -14,6 +14,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool,ToolException
+from langchain_core.messages import AIMessage
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain.agents.middleware import (
@@ -155,6 +156,20 @@ class RateLimitMiddleware(AgentMiddleware):
 
             raise
 
+class ModelRateLimitMiddleware(AgentMiddleware):
+
+    def wrap_model_call(self, request, handler):
+        try:
+            return handler(request)
+
+        except Exception as exc:
+            if "rate limit" in str(exc).lower() or "429" in str(exc):
+                return AIMessage(
+                    content="⏳ The AI service is temporarily rate-limited. Please try again later."
+                )
+
+            raise
+
 agent = create_agent(
     model=groq_llm,
 
@@ -175,6 +190,7 @@ agent = create_agent(
 
     StopAgentMiddleware(),
     RateLimitMiddleware(),
+    ModelRateLimitMiddleware(),
 
 ],
 
