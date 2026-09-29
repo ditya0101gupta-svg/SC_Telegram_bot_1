@@ -14,6 +14,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool,ToolException
+from langchain.agents.middleware.types import ModelResponse
 from langchain_core.messages import AIMessage
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -149,9 +150,11 @@ class RateLimitMiddleware(AgentMiddleware):
         except ToolException as exc:
             if "rate limit" in str(exc).lower():
                 return ToolMessage(
-                    content="The service is temporarily rate-limited. Please try again later.",
+                    content=(
+                        "The service is temporarily rate-limited. "
+                        "Please try again later."
+                    ),
                     tool_call_id=request.tool_call["id"],
-                    status="error",
                 )
 
             raise
@@ -163,9 +166,23 @@ class ModelRateLimitMiddleware(AgentMiddleware):
             return handler(request)
 
         except Exception as exc:
-            if "rate limit" in str(exc).lower() or "429" in str(exc):
-                return AIMessage(
-                    content="⏳ The AI service is temporarily rate-limited. Please try again later."
+            error_text = str(exc).lower()
+
+            if (
+                getattr(exc, "status_code", None) == 429
+                or "rate limit" in error_text
+                or "rate_limit" in error_text
+                or "429" in error_text
+            ):
+                return ModelResponse(
+                    result=[
+                        AIMessage(
+                            content=(
+                                "⏳ The AI service is temporarily rate-limited. "
+                                "Please try again later."
+                            )
+                        )
+                    ]
                 )
 
             raise
