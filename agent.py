@@ -23,6 +23,7 @@ from langchain.agents.middleware import (
     PIIMiddleware,
     HumanInTheLoopMiddleware,
     AgentMiddleware,
+    SummarizationMiddleware,
     hook_config,
 )
 from llm import groq_llm
@@ -124,6 +125,7 @@ def stop_test() -> str:
 def rate_limit_test() -> str:
     """Simulate an API rate limit error."""
     raise ToolException("API rate limit exceeded.")
+
     
 class StopAgentMiddleware(AgentMiddleware):
 
@@ -201,6 +203,12 @@ agent = create_agent(
                 "allowed_decisions": ["approve", "reject"]
             }
         }
+    ),
+
+    SummarizationMiddleware(
+    model=groq_llm,
+    trigger=("tokens", 5000),
+    keep=("messages", 10),
     ),
 
     StopAgentMiddleware(),
