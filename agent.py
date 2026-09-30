@@ -15,6 +15,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.tools import tool,ToolException
 from langchain.agents.middleware.types import ModelResponse
+from langchain_core.messages import HumanMessage
 from langchain_core.messages import AIMessage
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -130,11 +131,17 @@ class StopAgentMiddleware(AgentMiddleware):
     def before_model(self, state, runtime):
         last_message = state["messages"][-1]
 
+        logger.info(
+            "StopAgentMiddleware received message type=%s",
+            getattr(last_message, "type", None)
+        )
 
-        if "STOP_AGENT" in str(last_message.content):
-            logger.info("Agent stopped by middleware")
+        if last_message.content == "STOP_AGENT":
+            logger.info("StopAgentMiddleware: STOP_AGENT detected")
 
-        return None
+            return {
+                "messages": [HumanMessage(content="STOP_AGENT")]
+            }
 
 def handle_tool_error(exc: Exception, request) -> str | None:
     if isinstance(exc, RuntimeError) and "rate limit" in str(exc).lower():

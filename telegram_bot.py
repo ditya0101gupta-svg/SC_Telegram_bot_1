@@ -88,6 +88,8 @@ async def reply(update, context):
     
     from agent import agent
 
+    logger.info("Calling agent for incoming Telegram message")
+
     result = await asyncio.to_thread(
         agent.invoke,
         {"messages": [{"role": "user", "content": update.message.text}]},
