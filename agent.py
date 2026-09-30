@@ -25,6 +25,7 @@ from langchain.agents.middleware import (
     hook_config,
 )
 from llm import groq_llm
+from groq import RateLimitError
 from tool import live_cricket_score
 
 DB_URI = os.getenv("DATABASE_URL")
@@ -158,34 +159,26 @@ class RateLimitMiddleware(AgentMiddleware):
                 )
 
             raise
-
 class ModelRateLimitMiddleware(AgentMiddleware):
 
     def wrap_model_call(self, request, handler):
         try:
             return handler(request)
 
-        except Exception as exc:
-            error_text = str(exc).lower()
+        except RateLimitError as exc:
+            logger.warning("Groq rate limit detected: %s", exc)
 
-            if (
-                getattr(exc, "status_code", None) == 429
-                or "rate limit" in error_text
-                or "rate_limit" in error_text
-                or "429" in error_text
-            ):
-                return ModelResponse(
-                    result=[
-                        AIMessage(
-                            content=(
-                                "⏳ The AI service is temporarily rate-limited. "
-                                "Please try again later."
-                            )
+            return ModelResponse(
+                result=[
+                    AIMessage(
+                        content=(
+                            "⏳ The AI service is temporarily rate-limited. "
+                            "Please try again later."
                         )
-                    ]
-                )
+                    )
+                ]
+            )
 
-            raise
 
 agent = create_agent(
     model=groq_llm,
