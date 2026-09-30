@@ -127,28 +127,26 @@ def rate_limit_test() -> str:
     
 class StopAgentMiddleware(AgentMiddleware):
 
-    @hook_config(can_jump_to=["end"])
-    def before_model(self, state, runtime):
-        last_message = state["messages"][-1]
+   @hook_config(can_jump_to=["end"])
+   def before_model(self, state, runtime):
+    last_message = state["messages"][-1]
 
-        logger.info(
-            "StopAgentMiddleware received message type=%s",
-            getattr(last_message, "type", None)
-        )
+    logger.info(
+        "StopAgentMiddleware received message type=%s",
+        getattr(last_message, "type", None)
+    )
 
-        if last_message.content == "STOP_AGENT":
-            logger.info("StopAgentMiddleware: STOP_AGENT detected")
+    if last_message.content == "STOP_AGENT":
+        logger.info("StopAgentMiddleware: STOP_AGENT detected")
 
-            return {
-                "messages": [HumanMessage(content="STOP_AGENT")]
-            }
-
-def handle_tool_error(exc: Exception, request) -> str | None:
-    if isinstance(exc, RuntimeError) and "rate limit" in str(exc).lower():
-        return "⏳ The service is temporarily rate-limited. Please try again later."
+        return {
+            "messages": [
+                HumanMessage(content="STOP_AGENT")
+            ],
+            "jump_to": "end",
+        }
 
     return None
-
 class RateLimitMiddleware(AgentMiddleware):
 
     def wrap_tool_call(self, request, handler):
