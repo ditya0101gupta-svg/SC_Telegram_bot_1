@@ -1,6 +1,8 @@
+import httpx
 import uuid
-from agent import agent
 from tool import live_cricket_score
+from agent import agent, ModelRateLimitMiddleware
+from groq import RateLimitError
 
 
 def test_live_cricket_score():
@@ -87,3 +89,31 @@ def test_stop_agent_middleware():
         getattr(message, "content", "") == "STOP_AGENT"
         for message in result["messages"]
     )
+
+def test_model_rate_limit_middleware():
+    middleware = ModelRateLimitMiddleware()
+
+    def failing_model(request):
+        response = httpx.Response(
+            429,
+            request=httpx.Request(
+                "POST",
+                "https://api.groq.com/openai/v1/chat/completions"
+            )
+        )
+
+        raise RateLimitError(
+            "429 Too Many Requests",
+            response=response,
+            body={"error": "rate limit exceeded"}
+        )
+
+    request = None
+
+    result = middleware.wrap_model_call(
+        request,
+        failing_model
+    )
+
+    assert result.result
+    assert "temporarily rate-limited" in result.result[0].content
