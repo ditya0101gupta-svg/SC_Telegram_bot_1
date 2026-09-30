@@ -2,7 +2,7 @@ import os
 import logging
 import threading
 import asyncio
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServerHTTPServer
 from langgraph.types import Command
 from dotenv import load_dotenv
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
@@ -29,14 +29,17 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def run_health_server():
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", "10000"))
 
-    server = HTTPServer(
+    logger.info("Starting health server on 0.0.0.0:%s", port)
+
+    server = ThreadingHTTPServer(
         ("0.0.0.0", port),
         HealthHandler
     )
 
     logger.info("Health server started on port %s", port)
+
     server.serve_forever()
 
 async def start(update, context):
