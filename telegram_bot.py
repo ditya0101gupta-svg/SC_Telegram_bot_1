@@ -104,6 +104,15 @@ async def reply(update, context):
         context.user_data["hitl_pending"] = True
         return
 
+        # Handle rate-limit tool errors directly
+    for message in result["messages"]:
+        if getattr(message, "type", "") == "tool":
+            content = getattr(message, "content", "")
+
+            if "temporarily rate-limited" in content.lower():
+                await update.message.reply_text(content)
+                return
+
     last_message = result["messages"][-1]
 
     if getattr(last_message, "content", "") == "STOP_AGENT":
